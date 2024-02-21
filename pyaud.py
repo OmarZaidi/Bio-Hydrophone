@@ -1,8 +1,11 @@
+#!/usr/bin/python3.9
 import pyaudio
 import argparse
 import wave
 from datetime import datetime
+import time
 import os
+import json
 
 
 # For use of the pyaudio package on linux:
@@ -33,21 +36,30 @@ def list_audio_devices():
             print("Input Device id ", i, " - ", p.get_device_info_by_host_api_device_index(0, i).get('name'))
 
 
-def record_audio(device_index, duration=30, output_directory=".", prefix="output"):
+def record_audio(device_index=1, duration=30, start_time=None, sample_rate=48000, output_directory=".", prefix="output"):
     p = pyaudio.PyAudio()
+
+    # Delay recording until start time is reached
+    if start_time is not None:
+        current_time = datetime.now().time()
+        start_datetime = datetime.strptime(start_time, "%H:%M:%S").time()
+        delay_seconds = (datetime.combine(datetime.today(), start_datetime) - datetime.combine(datetime.today(), current_time)).seconds
+
+        print(f"Waiting for {delay_seconds} seconds until the start time ({start_time}) is reached.")
+        time.sleep(delay_seconds)
 
     # Try finally block used so that stream gets closed if error occurs
     try:
         stream = p.open(format=pyaudio.paInt16,  # Set to 16-bit audio format
                         channels=1,
-                        rate=44100,
+                        rate=sample_rate,
                         input=True,
                         input_device_index=device_index,
                         frames_per_buffer=1024)
 
         frames = []
 
-        print(f"Recording for {duration} seconds...")
+        print(f"Recording audio with sample rate {sample_rate}, duration {duration}s")
 
         # The formula (sampling rate / frames per iteration) * duration is used to calculate the
         # total number of iterations needed to cover the desired duration.
@@ -67,10 +79,10 @@ def record_audio(device_index, duration=30, output_directory=".", prefix="output
         file_path = os.path.join(output_directory, file_name)
 
         with wave.open(file_path, 'wb') as wf:
-            wf.setnchannels(1) #set to mono audio
+            wf.setnchannels(1)  # set to mono audio
             wf.setsampwidth(pyaudio.PyAudio().get_sample_size(pyaudio.paInt16))
             wf.setframerate(44100)
-            wf.writeframes(b''.join(frames)) # concatenates audio data stored in frames list into single byte string
+            wf.writeframes(b''.join(frames))  # concatenates audio data stored in frames list into single byte string
 
         print(f"Recording saved as: {file_path}")
 
@@ -109,6 +121,12 @@ def play_audio(file_path):
         p.terminate()
 
 
+# Convert "HH:MM:SS" to seconds for use with record function
+def time_to_seconds(time_str):
+    hours, minutes, seconds = map(int, time_str.split(':'))
+    return hours * 3600 + minutes * 60 + seconds
+
+
 if __name__ == "__main__":
     # Create an argument parser
     # To use: python pyaud.py --flag
@@ -120,6 +138,8 @@ if __name__ == "__main__":
     parser.add_argument("--play", help="Path to the audio file for playback")
     parser.add_argument("--duration", type=int, help="Specify the number of seconds to record")
 
+    # Optional argument for specifying a JSON file with additional parameters
+    parser.add_argument("-p", "--parameters", help="Path to a JSON file with additional parameters")
     # Parse command line arguments
     args = parser.parse_args()
 
@@ -128,7 +148,19 @@ if __name__ == "__main__":
 
     elif args.record:
         if args.device is not None:
-            record_audio(device_index=args.device)
+
+            # If a JSON file is provided, load the parameters
+            if args.parameters:
+                with open(args.parameters, 'r') as json_file:
+                    additional_params = json.load(json_file)
+
+                # Merge additional parameters with the command line arguments
+                args.__dict__.update(additional_params)
+                record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time,
+                             sample_rate=args.sample_rate)
+
+            else:
+                record_audio(device_index=args.device)
         else:
             print("Please specify the input audio device index using the --device option.")
 
