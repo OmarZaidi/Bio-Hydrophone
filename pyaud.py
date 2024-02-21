@@ -45,8 +45,10 @@ def record_audio(device_index=1, duration=30, start_time=None, sample_rate=48000
         start_datetime = datetime.strptime(start_time, "%H:%M:%S").time()
         delay_seconds = (datetime.combine(datetime.today(), start_datetime) - datetime.combine(datetime.today(), current_time)).seconds
 
-        print(f"Waiting for {delay_seconds} seconds until the start time ({start_time}) is reached.")
-        time.sleep(delay_seconds)
+        # If start time has passed already, there is no delay
+        if delay_seconds > 0:
+            print(f"Waiting for {delay_seconds} seconds until the start time ({start_time}) is reached.")
+            time.sleep(delay_seconds)
 
     # Try finally block used so that stream gets closed if error occurs
     try:
@@ -140,6 +142,7 @@ if __name__ == "__main__":
 
     # Optional argument for specifying a JSON file with additional parameters
     parser.add_argument("-p", "--parameters", help="Path to a JSON file with additional parameters")
+
     # Parse command line arguments
     args = parser.parse_args()
 
