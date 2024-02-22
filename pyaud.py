@@ -42,15 +42,22 @@ def record_audio(device_index=1, duration=30, start_time=None, sample_rate=48000
     # Delay recording until start time is reached
     if start_time is not None:
         current_time = datetime.now().time()
+        print(current_time)
         start_datetime = datetime.strptime(start_time, "%H:%M:%S").time()
-        delay_seconds = (datetime.combine(datetime.today(), start_datetime) - datetime.combine(datetime.today(), current_time)).seconds
+        print(start_datetime)
+
+        # Combine today's date with start_datetime
+        start_datetime_combined = datetime.combine(datetime.today(), start_datetime)
+
+        # Calculate the difference in seconds
+        delay_seconds = (start_datetime_combined - datetime.now()).total_seconds()
 
         # If start time has passed already, there is no delay
         if delay_seconds > 0:
             print(f"Waiting for {delay_seconds} seconds until the start time ({start_time}) is reached.")
             time.sleep(delay_seconds)
 
-    # Try finally block used so that stream gets closed if error occurs
+    # Try-finally block used so that stream gets closed if error occurs
     try:
         stream = p.open(format=pyaudio.paInt16,  # Set to 16-bit audio format
                         channels=1,
@@ -88,8 +95,11 @@ def record_audio(device_index=1, duration=30, start_time=None, sample_rate=48000
 
         print(f"Recording saved as: {file_path}")
 
-    finally:
+    except KeyboardInterrupt:
+        print("Recording Stopped")
+        pass
 
+    finally:
         # Close stream and remove pyaudio object
         stream.stop_stream()
         stream.close()

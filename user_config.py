@@ -85,7 +85,7 @@ def set_duration():
                 duration = valid_time()
             break
 
-    return duration
+    return str(duration)
 
 
 # Allows user to specify time to start recording
@@ -98,8 +98,8 @@ def valid_time():
 
         try:
             # Attempt to parse input time
-            user_time = datetime.strptime(user_input, '%H:%M:%S')
-            return user_time
+            user_time = datetime.strptime(user_input, '%H:%M:%S').time()
+            return user_time.strftime('%H:%M:%S')
         except ValueError:
             print("\nPlease enter a valid time!\n")
 
@@ -134,7 +134,7 @@ def set_start_time():
                 start_time = valid_time()
             break
 
-    return start_time
+    return str(start_time)
 
 
 # Main
