@@ -1,4 +1,4 @@
-# !/bin/sh
+#!/bin/sh
 # launcher.sh
 # navigate to home, then to test directory, then execute python script, then back home
 

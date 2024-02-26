@@ -36,7 +36,7 @@ def list_audio_devices():
             print("Input Device id ", i, " - ", p.get_device_info_by_host_api_device_index(0, i).get('name'))
 
 
-def record_audio(device_index=1, duration=30, start_time=None, sample_rate=48000, output_directory=".", prefix="output"):
+def record_audio(device_index=1, duration=10, start_time=None, sample_rate=96000, output_directory=".", prefix="output"):
     p = pyaudio.PyAudio()
 
     # Delay recording until start time is reached
@@ -73,7 +73,7 @@ def record_audio(device_index=1, duration=30, start_time=None, sample_rate=48000
         # The formula (sampling rate / frames per iteration) * duration is used to calculate the
         # total number of iterations needed to cover the desired duration.
         # (44100 / 1024) gives the number of iterations required to cover one second of audio data.
-        for i in range(0, int(44100 / 1024 * duration)):
+        for i in range(0, int((sample_rate / 1024) * duration)):
             # Reads 1024 frames of audio data from input audio stream
             data = stream.read(1024)
             # Appends chunk to audio data
@@ -90,7 +90,7 @@ def record_audio(device_index=1, duration=30, start_time=None, sample_rate=48000
         with wave.open(file_path, 'wb') as wf:
             wf.setnchannels(1)  # set to mono audio
             wf.setsampwidth(pyaudio.PyAudio().get_sample_size(pyaudio.paInt16))
-            wf.setframerate(44100)
+            wf.setframerate(sample_rate)
             wf.writeframes(b''.join(frames))  # concatenates audio data stored in frames list into single byte string
 
         print(f"Recording saved as: {file_path}")
