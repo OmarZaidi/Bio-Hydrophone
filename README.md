@@ -1,45 +1,55 @@
+
 # Bio-Hydrophone Project: pyaud.py Overview
 
 ## Introduction
-The `pyaud.py` script in the Bio-Hydrophone repository is a versatile tool designed for audio recording and playback, tailored for bioacoustic research using hydrophones. Leveraging the `pyaudio` library, this script facilitates easy interaction with audio devices for recording and analyzing underwater sounds.
+The `pyaud.py` script is an integral part of the Bio-Hydrophone project, designed to facilitate audio recording and playback for bioacoustic research. This Python-based tool leverages the `pyaudio` library to interface with audio hardware, enabling users to record and analyze underwater sounds or any audio data captured through hydrophones or microphones.
 
-## Features
-- **List Audio Devices**: Easily identify and select audio devices connected to your system for recording.
-- **Audio Recording**: Customizable audio recording settings, including device selection, recording duration, and sample rate, to capture high-quality audio data.
-- **Audio Playback**: Play back recorded audio files for analysis and review of captured sounds.
+## Detailed Script Overview
 
-## Getting Started
+### Dependencies
+- **Python 3.9**: Target version for compatibility and performance.
+- **PyAudio**: For accessing audio streams directly from the hardware.
+- **Argparse**: For parsing command-line arguments.
+- **Wave**: For reading and writing WAV files, facilitating audio data manipulation.
+- **Datetime**, **Time**, **OS**, **JSON**: For handling timing functions, file system interactions, and configuration settings.
 
-### Prerequisites
-- Python 3.9 or later
-- pyaudio library
+### Features
 
-### Installation
-1. Ensure Python and pip are installed on your system.
-2. Install `pyaudio` using pip:
-   ```
-   pip install pyaudio
-   ```
-   On Linux, you may need to install additional dependencies:
-   ```
-   sudo apt-get install portaudio19-dev
-   ```
+#### 1. **Listing Audio Devices**
+The `list_audio_devices()` function scans and lists all available audio devices with input capabilities, aiding in the selection of the correct device for recording.
+
+#### 2. **Recording Audio**
+The `record_audio()` function allows for recording audio with customizable settings such as device index, duration, start time, sample rate, and output directory. It supports delayed recording to start at a specific time and saves the audio in WAV format.
+
+#### 3. **Playing Audio**
+The `play_audio()` function plays back WAV audio files through the system's output devices, enabling users to review recorded audio files.
 
 ### Usage
-- **Listing Audio Devices**:
+The script is designed for command-line execution with various flags for different functionalities:
+
+- `--list-devices`: Lists all detected audio input devices.
+- `--record`: Starts recording audio. Can be customized with `--device`, `--duration`, and `--parameters` flags for device selection, recording duration, and additional parameters via a JSON file, respectively.
+- `--play`: Plays a specified WAV file.
+
+### Configuration via JSON
+An optional `--parameters` flag allows specifying a JSON file with additional recording settings, offering an extensible and user-friendly way to adjust recording parameters without modifying the script code.
+
+### Example Commands
+- **Listing Audio Devices**
   ```
   python pyaud.py --list-devices
   ```
-- **Recording Audio**:
-  Specify the device index, duration (in seconds), and output directory:
+- **Recording Audio**
   ```
-  python pyaud.py --record --device <device_index> --duration <duration_in_seconds> --output-directory <output_path>
+  python pyaud.py --record --device 1 --duration 10
   ```
-- **Playing Audio**:
-  Provide the path to the audio file you wish to play:
+- **Playing Back Audio**
   ```
-  python pyaud.py --play <path_to_audio_file>
+  python pyaud.py --play ./recordings/my_audio.wav
   ```
 
 ## Contributing
-We welcome contributions to the `pyaud.py` script and the broader Bio-Hydrophone project. Whether it's adding new features, improving documentation, or reporting bugs, your input is valuable in enhancing this tool for bioacoustic research.
+Contributions to the `pyaud.py` script and the Bio-Hydrophone project are highly appreciated. Whether it's feature enhancements, bug reports, or documentation improvements, your input helps make this tool more effective for bioacoustic research and related fields.
+
+## License
+N/A
