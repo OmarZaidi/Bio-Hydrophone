@@ -47,9 +47,5 @@ An optional `--parameters` flag allows specifying a JSON file with additional re
   ```
   python pyaud.py --play ./recordings/my_audio.wav
   ```
-
-## Contributing
-Contributions to the `pyaud.py` script and the Bio-Hydrophone project are highly appreciated. Whether it's feature enhancements, bug reports, or documentation improvements, your input helps make this tool more effective for bioacoustic research and related fields.
-
 ## License
 N/A
