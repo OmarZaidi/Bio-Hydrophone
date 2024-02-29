@@ -1,4 +1,4 @@
-![Bio-Hydrophone Logo](https://github.com/OmarZaidi/Bio-Hydrophone/blob/main/496.png.png?raw=true)
+![Bio-Hydrophone Logo](https://github.com/OmarZaidi/Bio-Hydrophone/496.png.png?raw=true)
 # Bio-Hydrophone Project: pyaud.py Overview
 
 ## Introduction
