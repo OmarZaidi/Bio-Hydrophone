@@ -3,6 +3,7 @@
     <img src="https://github.com/OmarZaidi/Bio-Hydrophone/blob/main/example.jpg" width="300" alt="Bio-Hydrophone Image">
   </a>
 </p>
+
 # Bio-Hydrophone Project: pyaud.py Overview
 
 ## Introduction
