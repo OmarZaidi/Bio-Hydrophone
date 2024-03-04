@@ -4,5 +4,5 @@
 
 cd /
 cd home/uhalpern/test
-sudo python LED.py
+sudo python pyaud.py --record --device=1 -p .\config.json
 cd /

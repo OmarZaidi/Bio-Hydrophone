@@ -2,10 +2,11 @@
 import pyaudio
 import argparse
 import wave
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import os
 import json
+import math
 
 
 # For use of the pyaudio package on linux:
@@ -36,74 +37,107 @@ def list_audio_devices():
             print("Input Device id ", i, " - ", p.get_device_info_by_host_api_device_index(0, i).get('name'))
 
 
-def record_audio(device_index=1, duration=10, start_time=None, sample_rate=96000, output_directory=".", prefix="output"):
+def record_audio(device_index=1, duration=10, start_time=None, end_time=None, time_delta=None, sample_rate=96000, output_directory=".", prefix="output"):
     p = pyaudio.PyAudio()
 
-    # Delay recording until start time is reached
-    if start_time is not None:
-        current_time = datetime.now().time()
-        print(current_time)
-        start_datetime = datetime.strptime(start_time, "%H:%M:%S").time()
-        print(start_datetime)
+    # Calculate number of recording sessions
+    if end_time is not None:
 
-        # Combine today's date with start_datetime
+        end_datetime = datetime.strptime(end_time, "%H:%M:%S").time()
+        start_datetime = datetime.strptime(start_time, "%H:%M:%S").time()
+        time_delta = datetime.strptime(time_delta, "%H:%M:%S").time()
+
+        end_datetime_combined = datetime.combine(datetime.today(), end_datetime)
         start_datetime_combined = datetime.combine(datetime.today(), start_datetime)
 
-        # Calculate the difference in seconds
-        delay_seconds = (start_datetime_combined - datetime.now()).total_seconds()
+        # Calculate the difference in seconds between start time and end time
+        total_seconds = (end_datetime_combined - start_datetime_combined).total_seconds()
 
-        # If start time has passed already, there is no delay
-        if delay_seconds > 0:
-            print(f"Waiting for {delay_seconds} seconds until the start time ({start_time}) is reached.")
-            time.sleep(delay_seconds)
+        # Calculate number of sessions using buffer time
+        time_delta_seconds = time_delta.second
+        num_sessions = round((total_seconds / time_delta_seconds))
+    else:
+        num_sessions = 1
 
-    # Try-finally block used so that stream gets closed if error occurs
-    try:
-        stream = p.open(format=pyaudio.paInt16,  # Set to 16-bit audio format
-                        channels=1,
-                        rate=sample_rate,
-                        input=True,
-                        input_device_index=device_index,
-                        frames_per_buffer=1024)
+    print(f"Recording for {num_sessions} sessions with a duration of {duration} each")
 
-        frames = []
+    for index in range(num_sessions):
 
-        print(f"Recording audio with sample rate {sample_rate}, duration {duration}s")
+        # Delay recording until start time is reached
+        if start_time is not None:
+            current_time = datetime.now().time()
+            print(current_time)
+            start_datetime = datetime.strptime(start_time, "%H:%M:%S").time()
+            print(start_datetime)
 
-        # The formula (sampling rate / frames per iteration) * duration is used to calculate the
-        # total number of iterations needed to cover the desired duration.
-        # (44100 / 1024) gives the number of iterations required to cover one second of audio data.
-        for i in range(0, int((sample_rate / 1024) * duration)):
-            # Reads 1024 frames of audio data from input audio stream
-            data = stream.read(1024)
-            # Appends chunk to audio data
-            frames.append(data)
+            # Combine today's date with start_datetime
+            start_datetime_combined = datetime.combine(datetime.today(), start_datetime)
 
-        print("Recording complete.")
+            # Calculate the difference in seconds
+            delay_seconds = (start_datetime_combined - datetime.now()).total_seconds()
 
-        # Generate a file name based on the current date and time
-        now = datetime.now()
-        timestamp = now.strftime("%Y%m%d_%H%M%S")
-        file_name = f"{prefix}_{timestamp}.wav"
-        file_path = os.path.join(output_directory, file_name)
+            # If start time has passed already, there is no delay
+            if delay_seconds > 0:
+                print(f"Waiting for {delay_seconds} seconds until the start time ({start_time}) is reached.")
+                for _ in range(math.ceil(delay_seconds)):
+                    #print(1)
+                    time.sleep(1)
+                #time.sleep(delay_seconds)
 
-        with wave.open(file_path, 'wb') as wf:
-            wf.setnchannels(1)  # set to mono audio
-            wf.setsampwidth(pyaudio.PyAudio().get_sample_size(pyaudio.paInt16))
-            wf.setframerate(sample_rate)
-            wf.writeframes(b''.join(frames))  # concatenates audio data stored in frames list into single byte string
 
-        print(f"Recording saved as: {file_path}")
 
-    except KeyboardInterrupt:
-        print("Recording Stopped")
-        pass
+        # Try-finally block used so that stream gets closed if error occurs
+        try:
+            stream = p.open(format=pyaudio.paInt16,  # Set to 16-bit audio format
+                            channels=1,
+                            rate=sample_rate,
+                            input=True,
+                            input_device_index=device_index,
+                            frames_per_buffer=1024)
 
-    finally:
-        # Close stream and remove pyaudio object
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
+            frames = []
+
+            print(f"Recording audio with sample rate {sample_rate}, duration {duration}s")
+
+            # The formula (sampling rate / frames per iteration) * duration is used to calculate the
+            # total number of iterations needed to cover the desired duration.
+            # (44100 / 1024) gives the number of iterations required to cover one second of audio data.
+            for i in range(0, int((sample_rate / 1024) * duration)):
+                # Reads 1024 frames of audio data from input audio stream
+                data = stream.read(1024)
+                # Appends chunk to audio data
+                frames.append(data)
+
+            print("Recording complete.")
+
+            # Generate a file name based on the current date and time
+            now = datetime.now()
+            timestamp = now.strftime("%Y%m%d_%H%M%S")
+            file_name = f"{prefix}_{timestamp}_{index}.wav"
+            file_path = os.path.join(output_directory, file_name)
+
+            with wave.open(file_path, 'wb') as wf:
+                wf.setnchannels(1)  # set to mono audio
+                wf.setsampwidth(pyaudio.PyAudio().get_sample_size(pyaudio.paInt16))
+                wf.setframerate(sample_rate)
+                wf.writeframes(b''.join(frames))  # concatenates audio data stored in frames list into single byte string
+                wf.close()
+
+            print(f"Recording saved as: {file_path}")
+
+            if start_time is not None:
+                start_time = start_datetime_combined + timedelta(seconds=time_delta_seconds)
+                start_time = start_time.strftime("%H:%M:%S")
+
+        except KeyboardInterrupt:
+            print("Recording Stopped")
+            pass
+
+        finally:
+            # Close stream and remove pyaudio object
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
 
 
 def play_audio(file_path):
@@ -169,8 +203,7 @@ if __name__ == "__main__":
 
                 # Merge additional parameters with the command line arguments
                 args.__dict__.update(additional_params)
-                record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time,
-                             sample_rate=args.sample_rate)
+                record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time, end_time=args.end_time, time_delta=args.delta_time, sample_rate=args.sample_rate)
 
             else:
                 record_audio(device_index=args.device)

@@ -8,6 +8,7 @@ file.
 
 import json
 import datetime
+import math
 from datetime import datetime, timedelta
 
 
@@ -27,6 +28,33 @@ def is_in_range(user_input, choices):
     else:
         print(f"\nPlease enter enter an integer between 1 and {choices}")
         return False
+
+
+def valid_time():
+    while 1:
+        print("Enter time in following format: HH:MM:SS")
+        user_input = input()
+
+        try:
+            # Attempt to parse input time
+            user_time = datetime.strptime(user_input, '%H:%M:%S').time()
+            return user_time.strftime('%H:%M:%S')
+        except ValueError:
+            print("\nPlease enter a valid time!\n")
+
+
+def valid_time_delta(time_delta, duration):
+    time_delta = datetime.strptime(time_delta, "%H:%M:%S").time()
+    duration = datetime.strptime(duration, "%H:%M:%S").time()
+
+    time_delta_date = datetime.combine(datetime.today(), time_delta)
+    duration_date = datetime.combine(datetime.today(), duration)
+
+    if (time_delta_date - duration_date).total_seconds() < 3:
+        print("\nLeave at least a three second gap between buffer time and duration!\n")
+        return False
+    else:
+        return True
 
 
 # Input sample rate
@@ -65,7 +93,7 @@ def set_duration():
         print("Choose a duration:")
         print("   [1] - 20 seconds")
         print("   [2] - 10 minutes")
-        print("   [3] - Specify hour and minute")
+        print("   [3] - Specify hour, minute, and second")
         duration = input()
 
         if not is_int(duration):
@@ -75,34 +103,55 @@ def set_duration():
             continue
         else:
             duration = int(duration)
-            current_time = datetime.now()
 
             if duration == 1:
                 duration = "00:00:20"
             elif duration == 2:
-                duration = "00:10:20"
+                duration = "00:10:00"
             else:
                 duration = valid_time()
             break
 
-    return str(duration)
+    return duration
 
+
+def set_buffer_time(duration):
+    while 1:
+        num_choices = 4
+
+        print("Choose buffer time between recordings:")
+        print("   [1] - 15 seconds")
+        print("   [2] - 10 minutes")
+        print("   [3] - 1 hour")
+        print("   [4] - Specify hour, minute, and second")
+
+        delta_time = input()
+
+        if not is_int(delta_time):
+            continue
+        if not is_in_range(int(delta_time), num_choices):
+            continue
+
+        else:
+            delta_time = int(delta_time)
+
+            if delta_time == 1:
+                delta_time = "00:00:20"
+            elif delta_time == 2:
+                delta_time = "00:10:00"
+            elif delta_time == 3:
+                delta_time = "01:00:00"
+            else:
+                delta_time = valid_time()
+            if not valid_time_delta(delta_time, duration):
+                continue
+            break
+
+    return delta_time
 
 # Allows user to specify time to start recording
 # Params: None
 # Returns: String: time set by user
-def valid_time():
-    while 1:
-        print("Enter start time in following format: HH:MM:SS")
-        user_input = input()
-
-        try:
-            # Attempt to parse input time
-            user_time = datetime.strptime(user_input, '%H:%M:%S').time()
-            return user_time.strftime('%H:%M:%S')
-        except ValueError:
-            print("\nPlease enter a valid time!\n")
-
 
 def set_start_time():
     # Input Start Time
@@ -134,15 +183,59 @@ def set_start_time():
                 start_time = valid_time()
             break
 
-    return str(start_time)
+    return start_time
+
+def set_end_time(start_time):
+
+    start_time = datetime.strptime(start_time, "%H:%M:%S").time()
+    start_datetime_combined = datetime.combine(datetime.today(), start_time)
+    # Input end time
+    while 1:
+        num_choices = 3
+
+        print("Choose end time:")
+        print("   [1] - 1 hour after first recording")
+        print("   [2] - 2 hours after first recording")
+        print("   [3] - Specify hour, minute, and second")
+        user_choice = input()
+
+        if not is_int(user_choice):
+            continue
+
+        if not is_in_range(int(user_choice), num_choices):
+            continue
+        else:
+            user_choice = int(user_choice)
+
+            if user_choice == 1:
+                one_hour_later = start_datetime_combined + timedelta(hours=1)
+                end_time = one_hour_later.strftime('%H:%M:%S')
+            elif user_choice == 2:
+                two_hours_later = start_datetime_combined + timedelta(hours=2)
+                end_time = two_hours_later.strftime('%H:%M:%S')
+            else:
+                end_time = valid_time()
+            break
+
+    return end_time
 
 
 # Main
 
 # Define config dictionary using user input
-config = {"sample_rate": set_sample_rate(),
-          "duration": set_duration(),
-          "start_time": set_start_time()
+
+sample_rate = set_sample_rate()
+duration = set_duration()
+time_delta = set_buffer_time(duration)
+start_time = set_start_time()
+end_time = set_end_time(start_time)
+
+config = {"sample_rate": sample_rate,
+          "duration": duration,
+          "delta_time": time_delta,
+          "start_time": start_time,
+          "end_time": end_time,
+          "index": 1
           }
 print("Dictionary created successfully: ")
 print(config)
