@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import time
 import os
 import json
+import math
 
 
 # For use of the pyaudio package on linux:
@@ -109,7 +110,9 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, ti
             print("Current date and time:", current_datetime_str)
 
             # Generate a file name based on the current date and time
-            file_name = f"{prefix}_{current_datetime_str}_{index}.wav"
+            now = datetime.now()
+            timestamp = now.strftime("%Y%m%d_%H%M%S")
+            file_name = f"{prefix}_{timestamp}_{index}.wav"
             file_path = os.path.join(output_directory, file_name)
 
             with wave.open(file_path, 'wb') as wf:
