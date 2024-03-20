@@ -40,18 +40,17 @@ def list_audio_devices():
 def record_audio(device_index=1, duration=10, start_time=None, end_time=None, time_delta=None, sample_rate=96000, output_directory=".", prefix="output"):
     p = pyaudio.PyAudio()
 
+    start_datetime = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+
     # Calculate number of recording sessions
     if end_time is not None:
 
-        end_datetime = datetime.strptime(end_time, "%H:%M:%S").time()
-        start_datetime = datetime.strptime(start_time, "%H:%M:%S").time()
+        # Convert datetime and time strings into objects
+        end_datetime = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
         time_delta = datetime.strptime(time_delta, "%H:%M:%S").time()
 
-        end_datetime_combined = datetime.combine(datetime.today(), end_datetime)
-        start_datetime_combined = datetime.combine(datetime.today(), start_datetime)
-
         # Calculate the difference in seconds between start time and end time
-        total_seconds = (end_datetime_combined - start_datetime_combined).total_seconds()
+        total_seconds = (end_datetime - start_datetime).total_seconds()
 
         # Calculate number of sessions using buffer time
         time_delta_seconds = time_delta.second
@@ -59,32 +58,29 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, ti
     else:
         num_sessions = 1
 
-    print(f"Recording for {num_sessions} sessions with a duration of {duration} each")
+    print(f"Recording for {num_sessions} sessions with a duration of {duration} seconds each")
 
-    for index in range(num_sessions):
+    for index in range(1, num_sessions + 1):
+
+        print("\n")
 
         # Delay recording until start time is reached
         if start_time is not None:
             current_time = datetime.now().time()
             print(current_time)
-            start_datetime = datetime.strptime(start_time, "%H:%M:%S").time()
             print(start_datetime)
 
-            # Combine today's date with start_datetime
-            start_datetime_combined = datetime.combine(datetime.today(), start_datetime)
-
             # Calculate the difference in seconds
-            delay_seconds = (start_datetime_combined - datetime.now()).total_seconds()
+            delay_seconds = (start_datetime - datetime.now()).total_seconds()
 
             # If start time has passed already, there is no delay
             if delay_seconds > 0:
-                print(f"Waiting for {delay_seconds} seconds until the start time ({start_time}) is reached.")
-                for _ in range(math.ceil(delay_seconds)):
-                    #print(1)
+                print(f"Waiting for {delay_seconds} seconds until the start time ({start_datetime}) is reached.")
+                for _ in range(round(delay_seconds)):
                     time.sleep(1)
-                #time.sleep(delay_seconds)
-
-
+                # time.sleep(delay_seconds)
+            else:
+                start_time = datetime.now().time()
 
         # Try-finally block used so that stream gets closed if error occurs
         try:
@@ -109,6 +105,9 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, ti
                 frames.append(data)
 
             print("Recording complete.")
+            current_datetime = datetime.now()
+            current_datetime_str = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
+            print("Current date and time:", current_datetime_str)
 
             # Generate a file name based on the current date and time
             now = datetime.now()
@@ -125,9 +124,8 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, ti
 
             print(f"Recording saved as: {file_path}")
 
-            if start_time is not None:
-                start_time = start_datetime_combined + timedelta(seconds=time_delta_seconds)
-                start_time = start_time.strftime("%H:%M:%S")
+            if start_time is not None and end_time is not None:
+                start_datetime = start_datetime + timedelta(seconds=time_delta_seconds)
 
         except KeyboardInterrupt:
             print("Recording Stopped")

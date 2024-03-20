@@ -8,7 +8,6 @@ file.
 
 import json
 import datetime
-import math
 from datetime import datetime, timedelta
 
 
@@ -30,15 +29,30 @@ def is_in_range(user_input, choices):
         return False
 
 
+def valid_datetime():
+    while 1:
+        print("Enter datetime in following format: YYYY-MM-DD HH:MM:SS")
+        user_input = input()
+
+        try:
+            # Parse the user input into a datetime object
+            user_datetime = datetime.strptime(user_input, '%Y-%m-%d %H:%M:%S')
+            # Convert the datetime object back to a string so that it can be stored in JSON file
+            return user_datetime.strftime('%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            print("\nPlease enter a valid datetime!\n")
+
+
 def valid_time():
     while 1:
         print("Enter time in following format: HH:MM:SS")
         user_input = input()
 
         try:
-            # Attempt to parse input time
-            user_time = datetime.strptime(user_input, '%H:%M:%S').time()
-            return user_time.strftime('%H:%M:%S')
+            # Parse the user input into a datetime object
+            user_datetime = datetime.strptime(user_input, '%H:%M:%S')
+            # Convert the time object back to a string so that it can be stored in JSON file
+            return user_datetime.strftime('%H:%M:%S')
         except ValueError:
             print("\nPlease enter a valid time!\n")
 
@@ -51,7 +65,7 @@ def valid_time_delta(time_delta, duration):
     duration_date = datetime.combine(datetime.today(), duration)
 
     if (time_delta_date - duration_date).total_seconds() < 3:
-        print("\nLeave at least a three second gap between buffer time and duration!\n")
+        print("\nBuffer time must at least be three seconds longer than duration!\n")
         return False
     else:
         return True
@@ -149,6 +163,7 @@ def set_buffer_time(duration):
 
     return delta_time
 
+
 # Allows user to specify time to start recording
 # Params: None
 # Returns: String: time set by user
@@ -161,7 +176,7 @@ def set_start_time():
         print("Choose start time:")
         print("   [1] - 1 hour from now")
         print("   [2] - 2 hours from now")
-        print("   [3] - Specify hour and minute")
+        print("   [3] - Specify date and time")
         start_time = input()
 
         if not is_int(start_time):
@@ -175,28 +190,28 @@ def set_start_time():
 
             if start_time == 1:
                 one_hour_later = current_time + timedelta(hours=1)
-                start_time = one_hour_later.strftime('%H:%M:%S')
+                start_time = one_hour_later.strftime('%Y-%m-%d %H:%M:%S')
             elif start_time == 2:
                 two_hours_later = current_time + timedelta(hours=2)
-                start_time = two_hours_later.strftime('%H:%M:%S')
+                start_time = two_hours_later.strftime('%Y-%m-%d %H:%M:%S')
             else:
-                start_time = valid_time()
+                start_time = valid_datetime()
             break
 
     return start_time
 
-def set_end_time(start_time):
 
-    start_time = datetime.strptime(start_time, "%H:%M:%S").time()
-    start_datetime_combined = datetime.combine(datetime.today(), start_time)
+def set_end_time(start_datetime_combined):
     # Input end time
+    start_datetime_combined = datetime.strptime(start_datetime_combined, '%Y-%m-%d %H:%M:%S')
+
     while 1:
         num_choices = 3
 
         print("Choose end time:")
         print("   [1] - 1 hour after first recording")
         print("   [2] - 2 hours after first recording")
-        print("   [3] - Specify hour, minute, and second")
+        print("   [3] - Specify date and time")
         user_choice = input()
 
         if not is_int(user_choice):
@@ -209,12 +224,12 @@ def set_end_time(start_time):
 
             if user_choice == 1:
                 one_hour_later = start_datetime_combined + timedelta(hours=1)
-                end_time = one_hour_later.strftime('%H:%M:%S')
+                end_time = one_hour_later.strftime('%Y-%m-%d %H:%M:%S')
             elif user_choice == 2:
                 two_hours_later = start_datetime_combined + timedelta(hours=2)
-                end_time = two_hours_later.strftime('%H:%M:%S')
+                end_time = two_hours_later.strftime('%Y-%m-%d %H:%M:%S')
             else:
-                end_time = valid_time()
+                end_time = valid_datetime()
             break
 
     return end_time
