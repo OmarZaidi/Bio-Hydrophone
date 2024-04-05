@@ -6,11 +6,10 @@ from datetime import datetime, timedelta
 import time
 import os
 import json
-import math
 
 
 # For use of the pyaudio package on linux:
-# pip install pyaudi
+# pip install pyaudio
 # sudo apt-get install portaudio19-dev
 
 def list_audio_devices():
@@ -29,12 +28,17 @@ def list_audio_devices():
     # In the case of the Raspberry PI, ALSA is the Host API
     info = p.get_host_api_info_by_index(0)
     numdevices = info.get('deviceCount')
+    input_devices = 0
 
     for i in range(0, numdevices):
         # Check if device has an input channel
         if (p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
+            input_devices += 1
+
             # Print information
-            print("Input Device id ", i, " - ", p.get_device_info_by_host_api_device_index(0, i).get('name'))
+            print("Input Device id [" + str(i) + "] - ", p.get_device_info_by_host_api_device_index(0, i).get('name'))
+
+    return input_devices
 
 
 def record_audio(device_index=1, duration=10, start_time=None, end_time=None, time_delta=None, sample_rate=96000, output_directory=".", prefix="output"):
@@ -49,16 +53,23 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, ti
         end_datetime = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
         time_delta = datetime.strptime(time_delta, "%H:%M:%S").time()
 
+        # Convert to timedelta object so that total_seconds can be extracted
+        time_delta = timedelta(hours=time_delta.hour, minutes=time_delta.minute, seconds=time_delta.second)
+
         # Calculate the difference in seconds between start time and end time
         total_seconds = (end_datetime - start_datetime).total_seconds()
 
-        # Calculate number of sessions using buffer time
-        time_delta_seconds = time_delta.second
+        # Calculate number of sessions using time_delta
+        time_delta_seconds = time_delta.total_seconds()
         num_sessions = round((total_seconds / time_delta_seconds))
+
+        # Handles case in which the number of sessions round to 0 when time_delta_seconds is > total_seconds
+        if num_sessions == 0:
+            num_sessions = 1
     else:
         num_sessions = 1
 
-    print(f"Recording for {num_sessions} sessions with a duration of {duration} seconds each")
+    print(f"Recording for {num_sessions} session(s) with a duration of {duration} seconds")
 
     for index in range(1, num_sessions + 1):
 
@@ -80,7 +91,9 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, ti
                     time.sleep(1)
                 # time.sleep(delay_seconds)
             else:
-                start_time = datetime.now().time()
+                # If current datetime is past start_datetime, current datetime becomes new start_datetime
+                # Still conducts all recording sessions
+                start_datetime = datetime.now()
 
         # Try-finally block used so that stream gets closed if error occurs
         try:
@@ -193,21 +206,21 @@ if __name__ == "__main__":
         list_audio_devices()
 
     elif args.record:
-        if args.device is not None:
 
-            # If a JSON file is provided, load the parameters
-            if args.parameters:
-                with open(args.parameters, 'r') as json_file:
-                    additional_params = json.load(json_file)
+        # If a JSON file is provided, load the parameters
+        if args.parameters:
+            with open(args.parameters, 'r') as json_file:
+                additional_params = json.load(json_file)
 
-                # Merge additional parameters with the command line arguments
-                args.__dict__.update(additional_params)
-                record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time, end_time=args.end_time, time_delta=args.delta_time, sample_rate=args.sample_rate)
+            # Merge additional parameters with the command line arguments
+            args.__dict__.update(additional_params)
+            record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time, end_time=args.end_time, time_delta=args.delta_time, sample_rate=args.sample_rate)
 
-            else:
-                record_audio(device_index=args.device)
+        elif args.device is not None:
+            record_audio(device_index=args.device)
+
         else:
-            print("Please specify the input audio device index using the --device option.")
+            print("Please specify the input audio device index using the --device option or a file with configured parameters using -p.")
 
     elif args.play:
         play_audio(args.play)

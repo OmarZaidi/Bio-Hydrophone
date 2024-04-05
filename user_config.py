@@ -6,9 +6,11 @@ parameters for pyaud.py. These params are stored in a json
 file.
 """
 
+import sys
 import json
 import datetime
 from datetime import datetime, timedelta
+from pyaud import list_audio_devices
 
 
 # Input Validation
@@ -43,6 +45,7 @@ def valid_datetime():
             print("\nPlease enter a valid datetime!\n")
 
 
+# Returns string
 def valid_time():
     while 1:
         print("Enter time in following format: HH:MM:SS")
@@ -120,11 +123,20 @@ def set_duration():
 
             if duration == 1:
                 duration = "00:00:20"
+                break
             elif duration == 2:
                 duration = "00:10:00"
+                break
             else:
                 duration = valid_time()
-            break
+                duration_time_object = datetime.strptime(duration, "%H:%M:%S").time()
+
+                # Duration must be at least 5 seconds
+                if duration_time_object.second < 5:
+                    print("Invalid time. Duration must be more than 5 seconds!\n")
+                    continue
+
+                break
 
     return duration
 
@@ -133,7 +145,7 @@ def set_buffer_time(duration):
     while 1:
         num_choices = 4
 
-        print("Choose buffer time between recordings:")
+        print("Choose period between recordings:")
         print("   [1] - 15 seconds")
         print("   [2] - 10 minutes")
         print("   [3] - 1 hour")
@@ -186,6 +198,8 @@ def set_start_time():
             continue
         else:
             start_time = int(start_time)
+
+            # Grabs current time for efficient time delta calculation
             current_time = datetime.now()
 
             if start_time == 1:
@@ -230,9 +244,34 @@ def set_end_time(start_datetime_combined):
                 end_time = two_hours_later.strftime('%Y-%m-%d %H:%M:%S')
             else:
                 end_time = valid_datetime()
+
             break
 
     return end_time
+
+
+def set_recording_device():
+    print("Choose a recording device:\n")
+    num_choices = list_audio_devices()
+
+    if num_choices == 0:
+        print("No input devices found, terminating program.")
+        sys.exit
+
+    while 1:
+        user_choice = input()
+
+        if not is_int(user_choice):
+            continue
+
+        if not is_in_range(int(user_choice), num_choices):
+            continue
+
+        else:
+            device = int(user_choice)
+            break
+
+    return device
 
 
 # Main
@@ -244,12 +283,14 @@ duration = set_duration()
 time_delta = set_buffer_time(duration)
 start_time = set_start_time()
 end_time = set_end_time(start_time)
+device = set_recording_device()
 
 config = {"sample_rate": sample_rate,
           "duration": duration,
           "delta_time": time_delta,
           "start_time": start_time,
           "end_time": end_time,
+          "device": device,
           "index": 1
           }
 print("Dictionary created successfully: ")
