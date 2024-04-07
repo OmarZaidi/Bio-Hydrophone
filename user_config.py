@@ -256,7 +256,7 @@ def set_recording_device():
 
     if num_choices == 0:
         print("No input devices found, terminating program.")
-        sys.exit
+        sys.exit(1)
 
     while 1:
         user_choice = input()
