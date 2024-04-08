@@ -44,7 +44,8 @@ def list_audio_devices():
 def record_audio(device_index=1, duration=10, start_time=None, end_time=None, time_delta=None, sample_rate=96000, output_directory=".", prefix="output"):
     p = pyaudio.PyAudio()
 
-    start_datetime = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+    if start_time is not None:
+        start_datetime = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
 
     # Calculate number of recording sessions
     if end_time is not None:

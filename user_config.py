@@ -132,7 +132,11 @@ def set_duration():
                 duration_time_object = datetime.strptime(duration, "%H:%M:%S").time()
 
                 # Duration must be at least 5 seconds
-                if duration_time_object.second < 5:
+                total_seconds = (duration_time_object.hour * 3600 +
+                                 duration_time_object.minute * 60 +
+                                 duration_time_object.second)
+
+                if total_seconds < 5:
                     print("Invalid time. Duration must be more than 5 seconds!\n")
                     continue
 
