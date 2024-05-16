@@ -1,4 +1,5 @@
 #!/usr/bin/python3.9
+import sys
 import pyaudio
 import argparse
 import wave
@@ -12,7 +13,7 @@ import json
 # pip install pyaudio
 # sudo apt-get install portaudio19-dev
 
-def list_audio_devices():
+def list_audio_devices(index=None, return_name=False):
     p = pyaudio.PyAudio()
 
     # Retrieve Information About the host API at index 0
@@ -30,43 +31,55 @@ def list_audio_devices():
     numdevices = info.get('deviceCount')
     input_devices = 0
 
+    # Returns name of specified device. Used in user_config.py under verify_config function
+    if return_name and index is not None:
+        return p.get_device_info_by_host_api_device_index(0, index-1).get('name')
+
     for i in range(0, numdevices):
         # Check if device has an input channel
         if (p.get_device_info_by_host_api_device_index(0, i).get('maxInputChannels')) > 0:
             input_devices += 1
 
             # Print information
-            print("Input Device id [" + str(i) + "] - ", p.get_device_info_by_host_api_device_index(0, i).get('name'))
+            print("Input Device id [" + str(i + 1) + "] - ", p.get_device_info_by_host_api_device_index(0, i).get('name'))
 
     return input_devices
 
 
-def record_audio(device_index=1, duration=10, start_time=None, end_time=None, time_delta=None, sample_rate=96000, output_directory=".", prefix="output"):
+# Main Function for handling recording session
+def record_audio(device_index=1, duration=10, start_time=None, end_time=None, period=None, sample_rate=96000, output_directory=".", prefix="output"):
     p = pyaudio.PyAudio()
 
+    # Converts start_time string to date_time object
     if start_time is not None:
         start_datetime = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
 
-    # Calculate number of recording sessions
-    if end_time is not None:
+        # Calculate number of recording sessions
+        if end_time is not None:
 
-        # Convert datetime and time strings into objects
-        end_datetime = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
-        time_delta = datetime.strptime(time_delta, "%H:%M:%S").time()
+            # Convert end_time into datetime and time strings into objects
+            end_datetime = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+            period = datetime.strptime(period, "%H:%M:%S").time()
 
-        # Convert to timedelta object so that total_seconds can be extracted
-        time_delta = timedelta(hours=time_delta.hour, minutes=time_delta.minute, seconds=time_delta.second)
+            # Make sure end_time is after start_time
+            from user_config import end_time_after
+            if not end_time_after(end_time, start_time):
+                print("Error! end_time must be after start_time. Please check config.json parameters. Terminating program.")
+                sys.exit(1)
 
-        # Calculate the difference in seconds between start time and end time
-        total_seconds = (end_datetime - start_datetime).total_seconds()
+            # Convert to timedelta object so that total_seconds can be extracted
+            period = timedelta(hours=period.hour, minutes=period.minute, seconds=period.second)
 
-        # Calculate number of sessions using time_delta
-        time_delta_seconds = time_delta.total_seconds()
-        num_sessions = round((total_seconds / time_delta_seconds))
+            # Calculate the difference in seconds between start time and end time
+            total_seconds = (end_datetime - start_datetime).total_seconds()
 
-        # Handles case in which the number of sessions round to 0 when time_delta_seconds is > total_seconds
-        if num_sessions == 0:
-            num_sessions = 1
+            # Calculate number of sessions using period
+            period_seconds = period.total_seconds()
+            num_sessions = round((total_seconds / period_seconds))
+
+            # Handles case in which the number of sessions round to 0 when period_seconds is > total_seconds
+            if num_sessions == 0:
+                num_sessions = 1
     else:
         num_sessions = 1
 
@@ -140,7 +153,7 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, ti
 
             # Calculate next recording session start time if there is more than one session
             if num_sessions > 1:
-                start_datetime = start_datetime + timedelta(seconds=time_delta_seconds)
+                start_datetime = start_datetime + timedelta(seconds=period_seconds)
 
         except KeyboardInterrupt:
             print("Recording stopped by keyboard interrupt")
@@ -215,10 +228,10 @@ if __name__ == "__main__":
 
             # Merge additional parameters with the command line arguments
             args.__dict__.update(additional_params)
-            record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time, end_time=args.end_time, time_delta=args.delta_time, sample_rate=args.sample_rate)
+            record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time, end_time=args.end_time, period=args.period, sample_rate=args.sample_rate)
 
         elif args.device is not None:
-            record_audio(device_index=args.device)
+            record_audio(device_index=args.device - 1)
 
         else:
             print("Please specify the input audio device index using the --device option or a file with configured parameters using -p.")
