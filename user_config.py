@@ -22,6 +22,7 @@ def is_int(user_input):
         print("\nPlease enter a valid integer!\n")
         return False
 
+
 # Input validation to ensure user input is in range of available choices
 def is_in_range(user_input, choices):
     if 0 < user_input <= choices:
@@ -29,6 +30,7 @@ def is_in_range(user_input, choices):
     else:
         print(f"\nPlease enter enter an integer between 1 and {choices}")
         return False
+
 
 # Ensures proper formatting of date_time entered by user
 def valid_datetime():
@@ -59,6 +61,7 @@ def valid_time():
         except ValueError:
             print("\nPlease enter a valid time!\n")
 
+
 # Ensures user enters an end_time that is after the start time
 def end_time_after(end_time, start_time):
     end_datetime = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S')
@@ -68,6 +71,7 @@ def end_time_after(end_time, start_time):
     else:
         print(f'\nError! end_time ({end_time}) must be after start_time ({start_time})\n')
         return False
+
 
 # Ensures period is at least three seconds more than duration to allow time to write to .wav file
 # Ensures that recoding sessions do not overlap each other.
@@ -139,6 +143,7 @@ def set_duration():
                 duration = "00:10:00"
                 break
             else:
+                # Validate duration and ensure it is more than 5 seconds
                 duration = valid_time()
                 duration_time_object = datetime.strptime(duration, "%H:%M:%S").time()
 
@@ -287,8 +292,18 @@ def set_recording_device():
             device = int(user_choice)
             break
 
-
     return device
+
+
+def set_location():
+    while 1:
+        print("Enter a location using 8 characters or less:")
+
+        user_input = input()
+        if len(user_input) > 8:
+            print("\nError! Too many characters entered!\n")
+        else:
+            return user_input
 
 
 def verify_config(config):
@@ -304,6 +319,7 @@ def verify_config(config):
         print(f'Start Time: {config["start_time"]}')
         print(f'End Time: {config["end_time"]}')
         print(f'Recording Device: {config["device"]} - {list_audio_devices(config["device"], return_name=True)}')
+        print(f'Location: {config["location"]}')
 
         print("\n[1] - Yes")
         print("[2] - No")
@@ -335,6 +351,7 @@ def verify_config(config):
             print("   [4] - Start Time")
             print("   [5] - End Time")
             print("   [6] - Device")
+            print("   [7] - Location")
 
             user_choice = None
 
@@ -371,6 +388,8 @@ def verify_config(config):
                         config["end_time"] = set_end_time(config["start_time"])
                     elif user_choice == 6:
                         config["device"] = set_recording_device()
+                    elif user_choice == 7:
+                        config["location"] = set_location()
 
                     break
 
@@ -380,7 +399,6 @@ def verify_config(config):
 # When Python encounters an import statement, it will execute the entire script to load the module and then search for the specified attribute within it.
 # Use if __name__ == "__main__": to ensure script only runs if user_config.py is explicitly ran by the user
 if __name__ == "__main__":
-
     # Define config dictionary using user input
     sample_rate = set_sample_rate()
     duration = set_duration()
@@ -388,6 +406,7 @@ if __name__ == "__main__":
     start_time = set_start_time()
     end_time = set_end_time(start_time)
     device = set_recording_device()
+    location = set_location()
 
     config = {"sample_rate": sample_rate,
               "duration": duration,
@@ -395,7 +414,8 @@ if __name__ == "__main__":
               "start_time": start_time,
               "end_time": end_time,
               "device": device,
-              "index": 1
+              "index": 1,
+              "location": location
               }
 
     verify_config(config)

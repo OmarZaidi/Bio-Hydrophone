@@ -13,6 +13,19 @@ import json
 # pip install pyaudio
 # sudo apt-get install portaudio19-dev
 
+class Tee(object):
+    def __init__(self, *files):
+        self.files = files
+
+    def write(self, obj):
+        for f in self.files:
+            f.write(obj)
+            f.flush()  # Ensure immediate flushing
+
+    def flush(self):
+        for f in self.files:
+            f.flush()
+
 def list_audio_devices(index=None, return_name=False):
     p = pyaudio.PyAudio()
 
@@ -47,7 +60,8 @@ def list_audio_devices(index=None, return_name=False):
 
 
 # Main Function for handling recording session
-def record_audio(device_index=1, duration=10, start_time=None, end_time=None, period=None, sample_rate=96000, output_directory=".", prefix="output"):
+def record_audio(device_index=1, duration=10, start_time=None, end_time=None, period=None,
+                 sample_rate=96000, location="default", current_directory=".", prefix="output"):
     p = pyaudio.PyAudio()
 
     # Converts start_time string to date_time object
@@ -80,8 +94,32 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, pe
             # Handles case in which the number of sessions round to 0 when period_seconds is > total_seconds
             if num_sessions == 0:
                 num_sessions = 1
+
+        # If current time past start time, current time becomes new start time
+        current_time = datetime.now()
+        if current_time > start_datetime:
+            start_datetime = current_time
+
     else:
+        start_datetime = datetime.now()
         num_sessions = 1
+
+    # Create output directory
+    start_time = start_datetime.strftime("%Y%m%d_%H%M%S")
+    output_directory = current_directory + "\\" + location + "_" + start_time
+    path = os.path.join(current_directory, output_directory)
+    os.mkdir(path)
+
+    # Open the log file
+    log_file_name = f"{location}_log.txt"
+    log_file_path = os.path.join(output_directory, log_file_name)
+    log_file = open(log_file_path, "w")
+
+    # Create a Tee object with sys.stdout and the log file
+    tee = Tee(sys.stdout, log_file)
+
+    # Replace sys.stdout with the Tee object
+    sys.stdout = tee
 
     print(f"Recording for {num_sessions} session(s) with a duration of {duration} seconds")
 
@@ -92,8 +130,7 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, pe
         # Delay recording until start time is reached
         if start_time is not None:
             current_time = datetime.now().time()
-            print(current_time)
-            print(start_datetime)
+            print(f'Current date and time: {current_time}')
 
             # Calculate the difference in seconds
             delay_seconds = (start_datetime - datetime.now()).total_seconds()
@@ -136,10 +173,10 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, pe
             current_datetime_str = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
             print("Current date and time:", current_datetime_str)
 
-            # Generate a file name based on the current date and time
-            now = datetime.now()
-            timestamp = now.strftime("%Y%m%d_%H%M%S")
-            file_name = f"{prefix}_{timestamp}_{index}.wav"
+            # Generate a file name based on the index and save to output directory
+            # now = datetime.now()
+            # timestamp = now.strftime("%Y%m%d_%H%M%S")
+            file_name = f"{prefix}_{index}.wav"
             file_path = os.path.join(output_directory, file_name)
 
             with wave.open(file_path, 'wb') as wf:
@@ -164,6 +201,12 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, pe
             stream.stop_stream()
             stream.close()
             p.terminate()
+
+    # Close the log file
+    log_file.close()
+
+    # Restore sys.stdout to its original value if necessary
+    sys.stdout = sys.__stdout__
 
 
 def play_audio(file_path):
@@ -228,7 +271,7 @@ if __name__ == "__main__":
 
             # Merge additional parameters with the command line arguments
             args.__dict__.update(additional_params)
-            record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time, end_time=args.end_time, period=args.period, sample_rate=args.sample_rate)
+            record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time, end_time=args.end_time, period=args.period, sample_rate=args.sample_rate, location=args.location)
 
         elif args.device is not None:
             record_audio(device_index=args.device - 1)
