@@ -343,8 +343,8 @@ def verify_config(config):
             verified = True
             continue
         else:
-            num_choices = 6
-            print("\n Which Parameter would you like to change: ")
+            num_choices = 7
+            print("\nWhich Parameter would you like to change: ")
             print("   [1] - Sample Rate")
             print("   [2] - Duration")
             print("   [3] - Period")
@@ -362,9 +362,11 @@ def verify_config(config):
                     user_choice = input()
 
                 if not is_int(user_choice):
+                    user_choice = None
                     continue
 
                 if not is_in_range(int(user_choice), num_choices):
+                    user_choice = None
                     continue
 
                 else:
