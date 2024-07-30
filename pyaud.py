@@ -105,8 +105,10 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, pe
         num_sessions = 1
 
     # Create output directory
+    current_directory = os.getcwd()
     start_time = start_datetime.strftime("%Y%m%d_%H%M%S")
-    output_directory = current_directory + "\\" + location + "_" + start_time
+    #output_directory = "\\" + location + "_" + start_time
+    output_directory = current_directory + "/" + location + "_" + start_time
     path = os.path.join(current_directory, output_directory)
     os.mkdir(path)
 
