@@ -13,6 +13,7 @@ import json
 # pip install pyaudio
 # sudo apt-get install portaudio19-dev
 
+# Class Tee allows output to write to output log and command line at the same time
 class Tee(object):
     def __init__(self, *files):
         self.files = files
@@ -107,7 +108,6 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, pe
     # Create output directory
     current_directory = os.getcwd()
     start_time = start_datetime.strftime("%Y%m%d_%H%M%S")
-    #output_directory = "\\" + location + "_" + start_time
     output_directory = current_directory + "/" + location + "_" + start_time
     path = os.path.join(current_directory, output_directory)
     os.mkdir(path)
@@ -176,8 +176,6 @@ def record_audio(device_index=1, duration=10, start_time=None, end_time=None, pe
             print("Current date and time:", current_datetime_str)
 
             # Generate a file name based on the index and save to output directory
-            # now = datetime.now()
-            # timestamp = now.strftime("%Y%m%d_%H%M%S")
             file_name = f"{prefix}_{index}.wav"
             file_path = os.path.join(output_directory, file_name)
 
@@ -248,12 +246,15 @@ if __name__ == "__main__":
     # Create an argument parser
     # To use: python pyaud.py --flag
 
-    parser = argparse.ArgumentParser(description="List input audio devices, record audio, and play back.")
+    parser = argparse.ArgumentParser(description="List input audio devices, record audio, and play back audio.")
     parser.add_argument("--list-devices", action="store_true", help="List available input audio devices")
     parser.add_argument("--record", action="store_true", help="Record audio for 30 seconds")
     parser.add_argument("--device", type=int, help="Specify the input audio device index for recording [int]")
     parser.add_argument("--play", help="Path to the audio file for playback")
-    parser.add_argument("--duration", type=int, help="Specify the number of seconds to record")
+
+    # Recording Parameters
+    parser.add_argument("-d", "--duration", type=int, help="Specify the number of seconds to record (default is 10 seconds)")
+    parser.add_argument("-r", "--rate", type=int, help="Specify Sampling Rate (hz) (default is 48000 hz)")
 
     # Optional argument for specifying a JSON file with additional parameters
     parser.add_argument("-p", "--parameters", help="Path to a JSON file with additional parameters")
@@ -276,7 +277,7 @@ if __name__ == "__main__":
             record_audio(device_index=args.device, duration=time_to_seconds(args.duration), start_time=args.start_time, end_time=args.end_time, period=args.period, sample_rate=args.sample_rate, location=args.location)
 
         elif args.device is not None:
-            record_audio(device_index=args.device - 1)
+            record_audio(device_index=args.device - 1, duration=args.duration, sample_rate=args.rate)
 
         else:
             print("Please specify the input audio device index using the --device option or a file with configured parameters using -p.")
